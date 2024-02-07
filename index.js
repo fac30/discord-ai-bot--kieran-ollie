@@ -3,9 +3,15 @@ require('dotenv/config');
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
+const OpenAIApi = require('openai');
+const openai = new OpenAIApi({apiKey: process.env.API_KEY});
+client.login(process.env.TOKEN);
 
 const client = new Client({
-    intents: [GatewayIntentBits.Guilds, 
+    intents: [
+	GatewayIntentBits.Guilds,
+	GatewayIntentBits.GuildMessages
+, 
 			GatewayIntentBits.MessageContent,  
 			GatewayIntentBits.GuildMessages]
 });
@@ -62,4 +68,7 @@ client.on('messageCreate',  (message) => {
     message.reply('hello!');
 })
 
-client.login(process.env.TOKEN);
+client.on('ready', () => {
+	console.log('The bot is online!');
+})
+
