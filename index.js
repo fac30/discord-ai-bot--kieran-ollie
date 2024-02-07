@@ -1,22 +1,19 @@
 require('dotenv/config');
-
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
-const OpenAIApi = require('openai');
-const openai = new OpenAIApi({apiKey: process.env.API_KEY});
-client.login(process.env.TOKEN);
+const OpenAI  = require('openai');
 
 const client = new Client({
     intents: [
-	GatewayIntentBits.Guilds,
-	GatewayIntentBits.GuildMessages
-, 
-			GatewayIntentBits.MessageContent,  
-			GatewayIntentBits.GuildMessages]
+		// possibly in GPT-4 you don't need GatewayIntentBits and 'Guilds' etc are strings in array
+		GatewayIntentBits.Guilds,
+		GatewayIntentBits.MessageContent,  
+		GatewayIntentBits.GuildMessages]
 });
 
 client.commands = new Collection();
+client.login(process.env.TOKEN);
 const foldersPath = path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(foldersPath);
 
@@ -37,6 +34,10 @@ for (const folder of commandFolders) {
 client.once(Events.ClientReady, readyClient => {
     console.log(`Ready! Logged in as ${readyClient.user.tag}`);
 });
+
+const openai = new OpenAI({
+	apiKey: process.env.OPENAI_KEY,
+})
 
 client.on(Events.InteractionCreate, async interaction => {
     if (!interaction.isChatInputCommand()) return;
@@ -59,16 +60,25 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 });
 
-client.on('messageCreate',  (message) => {
+client.on('messageCreate',  async (message) => {
     console.log('Message received:', message.content)
 
 	// Prevent the bot from replying to its own messages
     if (message.author.bot) return;
+	if (message.channel.id !== process.env.CHANNEL_ID) return;
 
-    message.reply('hello!');
-})
+	let conversationLog = [{role: 'system', content: "You are a friendly chatbot that speaks only in limericks."}];
 
-client.on('ready', () => {
-	console.log('The bot is online!');
-})
+	conversationLog.push({
+		role: 'user',
+		content: message.content})
 
+	await message.channel.sendTyping();
+
+	const result = await openai.createChatCompletion({
+		model: 'gpt-3.5',
+		messages: conversationLog.map(({ role, content }) => ({ role, content }))
+	})
+
+	message.reply(result.data.choices[0].message);
+});
