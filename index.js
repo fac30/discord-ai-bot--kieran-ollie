@@ -2,7 +2,7 @@ require('dotenv/config');
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
-const OpenAI  = require('openai');
+const { OpenAI }  = require('openai');
 
 const client = new Client({
     intents: [
@@ -36,8 +36,8 @@ client.once(Events.ClientReady, readyClient => {
 });
 
 const openai = new OpenAI({
-	apiKey: process.env.OPENAI_KEY,
-})
+    apiKey: process.env.OPENAI_KEY,
+});
 
 client.on(Events.InteractionCreate, async interaction => {
     if (!interaction.isChatInputCommand()) return;
@@ -60,25 +60,42 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 });
 
-client.on('messageCreate',  async (message) => {
+client.on('messageCreate', async (message) => {
     console.log('Message received:', message.content)
+    console.log('Message metadata: ', message)
 
-	// Prevent the bot from replying to its own messages
-    if (message.author.bot) return;
-	if (message.channel.id !== process.env.CHANNEL_ID) return;
+    // Prevent the bot from replying to its own messages
+    // if (message.author.bot) return;
+    // if (message.channel.id !== process.env.CHANNEL_ID) return;
 
-	let conversationLog = [{role: 'system', content: "You are a friendly chatbot that speaks only in limericks."}];
+    let conversationLog = [{ role: 'system', content: "You are a friendly chatbot that speaks only in limericks." }];
 
-	conversationLog.push({
-		role: 'user',
-		content: message.content})
+    conversationLog.push({
+        role: 'user',
+        content: message.content
+    });
 
-	await message.channel.sendTyping();
+    await message.channel.sendTyping();
 
-	const result = await openai.createChatCompletion({
-		model: 'gpt-3.5',
-		messages: conversationLog.map(({ role, content }) => ({ role, content }))
-	})
+    try {
+        console.log('trying');
 
-	message.reply(result.data.choices[0].message);
+        const result = await openai.chat.completions.create({
+            model: 'gpt-3.5-turbo',
+            messages: conversationLog.map(({ role, content }) => ({ role, content }))
+        });
+
+        // Log the result to see if it's populated
+        console.log('Result:', result);
+
+        if (result.data.choices && result.data.choices.length > 0) {
+            console.log('Generated message:', result.data.choices[0].message);
+            message.reply(result.data.choices[0].message);
+        } else {
+            console.log('No message generated.');
+        }
+    } catch (error) {
+        console.error('Error while calling OpenAI:', error);
+        return;
+    }
 });
