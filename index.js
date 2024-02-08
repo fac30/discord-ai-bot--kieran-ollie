@@ -65,7 +65,7 @@ client.on('messageCreate', async (message) => {
     console.log('Message metadata: ', message)
 
     // Prevent the bot from replying to its own messages
-    // if (message.author.bot) return;
+    if (message.author.bot) return;
     // if (message.channel.id !== process.env.CHANNEL_ID) return;
 
     let conversationLog = [{ role: 'system', content: "You are a friendly chatbot that speaks only in limericks." }];
@@ -78,8 +78,6 @@ client.on('messageCreate', async (message) => {
     await message.channel.sendTyping();
 
     try {
-        console.log('trying');
-
         const result = await openai.chat.completions.create({
             model: 'gpt-3.5-turbo',
             messages: conversationLog.map(({ role, content }) => ({ role, content }))
@@ -88,9 +86,9 @@ client.on('messageCreate', async (message) => {
         // Log the result to see if it's populated
         console.log('Result:', result);
 
-        if (result.data.choices && result.data.choices.length > 0) {
-            console.log('Generated message:', result.data.choices[0].message);
-            message.reply(result.data.choices[0].message);
+        if ((result['choices'][0]['message']['content'])) {
+            console.log('Generated message:', result['choices'][0]['message']['content']);
+            message.reply(result['choices'][0]['message']['content']);
         } else {
             console.log('No message generated.');
         }
