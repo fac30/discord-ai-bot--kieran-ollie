@@ -1,13 +1,22 @@
 require('dotenv/config');
+const OpenAI = require("openai").default;
 
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
 
+
+const openai = new OpenAI({
+    apiKey: process.env.API_KEY,
+});
+
 const client = new Client({
-    intents: [GatewayIntentBits.Guilds, 
-			GatewayIntentBits.MessageContent,  
-			GatewayIntentBits.GuildMessages]
+    intents: [
+        GatewayIntentBits.Guilds, 
+		GatewayIntentBits.MessageContent,  
+		GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.DirectMessages
+    ]
 });
 
 client.commands = new Collection();
@@ -53,13 +62,53 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 });
 
-client.on('messageCreate',  (message) => {
-    console.log('Message received:', message.content)
+client.on('messageCreate', async (message) => {
+
+    console.log('=> Message content <=', message)
+    
+    //console.log('=> Message received <=', message.content)
+    
+    //console.log('=> Message typeof <=', typeof(message.content))
+
+    //console.log('Message received:', message.content)
 
 	// Prevent the bot from replying to its own messages
     if (message.author.bot) return;
 
-    message.reply('hello!');
+    //prevent bot from replying to messages from different channels - BREAKING CHANGE BECAUSE CHANNEL ID WAS DIFFERENT ?WHY
+    //if (message.channel.id !== process.env.CHANNEL_ID) return;
+
+    let conversation = [];
+    conversation.push({
+        role: 'system',
+        content: 'You are a helpful assistant'
+    });
+
+    //let prevMessages = await message.channel.messages.fetch({ limit: 10 });
+
+    const response = await openai.chat.completions
+    .create({
+        model: 'gpt-3.5-turbo',
+        messages: [
+            {
+                role: 'system',
+                content: 'You are a helpful assistant'
+            },            
+            {
+                role: 'user',
+                content: message.content
+            }
+        ]
+    }).catch((error) => console.error('OpenAI Error:', error));
+
+    //console.log('response from open ai')
+
+    //console.log(response.choices)
+
+    //console.log('=> CONVERSATION <=', conversation),
+
+    message.reply(response.choices[0].message.content);
+    
 })
 
 client.login(process.env.TOKEN);
