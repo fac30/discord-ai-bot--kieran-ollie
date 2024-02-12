@@ -7,7 +7,7 @@ const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
 
 
 const openai = new OpenAI({
-    apiKey: process.env.API_KEY,
+    apiKey: process.env.OPENAI_KEY,
 });
 
 const client = new Client({
@@ -62,53 +62,49 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 });
 
+
+
+const conversationHistories = {};
+
 client.on('messageCreate', async (message) => {
-
-    console.log('=> Message content <=', message)
+    console.log('=> Message content <=', message);
     
-    //console.log('=> Message received <=', message.content)
-    
-    //console.log('=> Message typeof <=', typeof(message.content))
-
-    //console.log('Message received:', message.content)
-
-	// Prevent the bot from replying to its own messages
     if (message.author.bot) return;
-
-    //prevent bot from replying to messages from different channels - BREAKING CHANGE BECAUSE CHANNEL ID WAS DIFFERENT ?WHY
-    //if (message.channel.id !== process.env.CHANNEL_ID) return;
-
-    let conversation = [];
-    conversation.push({
-        role: 'system',
-        content: 'You are a helpful assistant'
-    });
-
-    //let prevMessages = await message.channel.messages.fetch({ limit: 10 });
-
-    const response = await openai.chat.completions
-    .create({
-        model: 'gpt-3.5-turbo',
-        messages: [
-            {
-                role: 'system',
-                content: 'You are a helpful assistant'
-            },            
-            {
-                role: 'user',
-                content: message.content
-            }
-        ]
-    }).catch((error) => console.error('OpenAI Error:', error));
-
-    //console.log('response from open ai')
-
-    //console.log(response.choices)
-
-    //console.log('=> CONVERSATION <=', conversation),
-
-    message.reply(response.choices[0].message.content);
     
-})
+    const channelId = message.channel.id;
+    
+    // Initialize the conversation for the channel if it doesn't exist
+    if (!conversationHistories[channelId]) {
+        conversationHistories[channelId] = [{
+            role: 'system',
+            content: 'You are a helpful assistant'
+            }];
+        }
+    
+        // Add the new user message to the conversation history
+        conversationHistories[channelId].push({
+            role: 'user',
+            content: message.content
+        });
+    
+        try {
+            const response = await openai.chat.completions.create({
+                model: 'gpt-3.5-turbo',
+                messages: conversationHistories[channelId],
+            });
+    
+            // After receiving the response, add it to the conversation history
+            conversationHistories[channelId].push({
+                role: 'assistant',
+                content: response.choices[0].message.content,
+            });
+    
+            // Reply to the user with the AI's response
+            message.reply(response.choices[0].message.content);
+        } catch (error) {
+            console.error('OpenAI Error:', error);
+        }
+});
+    
 
 client.login(process.env.TOKEN);
