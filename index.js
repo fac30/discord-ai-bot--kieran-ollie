@@ -71,18 +71,18 @@ client.on('messageCreate', async (message) => {
     
     if (message.author.bot) return;
     
-    const channelId = message.channel.id;
+    const authorId = message.author.id;
     
     // Initialize the conversation for the channel if it doesn't exist
-    if (!conversationHistories[channelId]) {
-        conversationHistories[channelId] = [{
+    if (!conversationHistories[authorId]) {
+        conversationHistories[authorId] = [{
             role: 'system',
             content: 'You are a helpful assistant'
             }];
         }
     
         // Add the new user message to the conversation history
-        conversationHistories[channelId].push({
+        conversationHistories[authorId].push({
             role: 'user',
             content: message.content
         });
@@ -90,11 +90,11 @@ client.on('messageCreate', async (message) => {
         try {
             const response = await openai.chat.completions.create({
                 model: 'gpt-3.5-turbo',
-                messages: conversationHistories[channelId],
+                messages: conversationHistories[authorId],
             });
     
             // After receiving the response, add it to the conversation history
-            conversationHistories[channelId].push({
+            conversationHistories[authorId].push({
                 role: 'assistant',
                 content: response.choices[0].message.content,
             });
