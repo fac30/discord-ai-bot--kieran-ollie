@@ -1,19 +1,16 @@
 require('dotenv/config');
+
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
-const { OpenAI }  = require('openai');
 
 const client = new Client({
-    intents: [
-		// possibly in GPT-4 you don't need GatewayIntentBits and 'Guilds' etc are strings in array
-		GatewayIntentBits.Guilds,
-		GatewayIntentBits.MessageContent,  
-		GatewayIntentBits.GuildMessages]
+    intents: [GatewayIntentBits.Guilds, 
+			GatewayIntentBits.MessageContent,  
+			GatewayIntentBits.GuildMessages]
 });
 
 client.commands = new Collection();
-client.login(process.env.TOKEN);
 const foldersPath = path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(foldersPath);
 
@@ -33,10 +30,6 @@ for (const folder of commandFolders) {
 
 client.once(Events.ClientReady, readyClient => {
     console.log(`Ready! Logged in as ${readyClient.user.tag}`);
-});
-
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_KEY,
 });
 
 client.on(Events.InteractionCreate, async interaction => {
@@ -60,40 +53,13 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 });
 
-client.on('messageCreate', async (message) => {
+client.on('messageCreate',  (message) => {
     console.log('Message received:', message.content)
-    console.log('Message metadata: ', message)
 
-    // Prevent the bot from replying to its own messages
+	// Prevent the bot from replying to its own messages
     if (message.author.bot) return;
-    // if (message.channel.id !== process.env.CHANNEL_ID) return;
 
-    let conversationLog = [{ role: 'system', content: "You are a friendly chatbot that speaks only in limericks." }];
+    message.reply('hello!');
+})
 
-    conversationLog.push({
-        role: 'user',
-        content: message.content
-    });
-
-    await message.channel.sendTyping();
-
-    try {
-        const result = await openai.chat.completions.create({
-            model: 'gpt-3.5-turbo',
-            messages: conversationLog.map(({ role, content }) => ({ role, content }))
-        });
-
-        // Log the result to see if it's populated
-        console.log('Result:', result);
-
-        if ((result['choices'][0]['message']['content'])) {
-            console.log('Generated message:', result['choices'][0]['message']['content']);
-            message.reply(result['choices'][0]['message']['content']);
-        } else {
-            console.log('No message generated.');
-        }
-    } catch (error) {
-        console.error('Error while calling OpenAI:', error);
-        return;
-    }
-});
+client.login(process.env.TOKEN);
