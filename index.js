@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
 const { OpenAI }  = require('openai');
+const naughtyWords = ['duck', 'spit']
 
 const client = new Client({
     intents: [
@@ -96,4 +97,19 @@ client.on('messageCreate', async (message) => {
         console.error('Error while calling OpenAI:', error);
         return;
     }
+
+    // Convert message content to lower case to make the check case-insensitive
+    const messageContentLowerCase = message.content.toLowerCase();
+
+    // Check if the message contains any of the naughty words
+    const containsNaughtyWord = naughtyWords.some(keyword => messageContentLowerCase.includes(keyword));
+
+    if (containsNaughtyWord) {
+    // Send a DM to the user or take any other action you see fit
+    try {
+      await message.author.send('Please refrain from using inappropriate language.');
+    } catch (error) {
+      console.error(`Could not send DM to ${message.author.tag}.`);
+    }
+  }
 });
