@@ -62,7 +62,9 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 });
 
+const naughtyWords = ['duck', 'spit'];
 
+const blackList = new Set();
 
 const conversationHistories = {};
 
@@ -104,6 +106,36 @@ client.on('messageCreate', async (message) => {
         } catch (error) {
             console.error('OpenAI Error:', error);
         }
+
+    // Check for naughty words in the message
+    const messageContentLowerCase = message.content.toLowerCase();
+    const containsNaughtyWord = naughtyWords.some(keyword => messageContentLowerCase.includes(keyword));
+
+    if (containsNaughtyWord) {
+        if (blackList.has(authorId)) {
+            // User is already in the blacklist, try to kick them
+            try {
+                const member = message.guild.members.cache.get(authorId);
+                if (member) {
+                    await member.kick('Repeated use of banned words.');
+                    console.log(`Kicked ${message.author.tag} for repeated offenses.`);
+                } else {
+                    console.log(`Member not found in guild.`);
+                }
+            } catch (error) {
+                console.error(`Could not kick ${message.author.tag}.`, error);
+            }
+        } else {
+            // First offense, add the user to the blacklist and send a warning DM
+            blackList.add(message.author.id);
+            try {
+                await message.author.send('Your message contains one of the naughty keywords! If you do this again you will be banned!');
+            } catch (dmError) {
+                console.error(`Could not send DM to ${message.author.tag}.`, dmError);
+            }
+        }
+    }
+
 });
     
 
