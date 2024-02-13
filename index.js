@@ -3,14 +3,21 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
 const { OpenAI }  = require('openai');
+
+/// List of words to check for in messages
 const naughtyWords = ['duck', 'spit']
+/// List of users who have been warned about using banned words
+const banList = [];
 
 const client = new Client({
     intents: [
 		// possibly in GPT-4 you don't need GatewayIntentBits and 'Guilds' etc are strings in array
 		GatewayIntentBits.Guilds,
 		GatewayIntentBits.MessageContent,  
-		GatewayIntentBits.GuildMessages]
+		GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildModeration,
+    ]
 });
 
 client.commands = new Collection();
@@ -104,12 +111,34 @@ client.on('messageCreate', async (message) => {
     // Check if the message contains any of the naughty words
     const containsNaughtyWord = naughtyWords.some(keyword => messageContentLowerCase.includes(keyword));
 
+    // If the message contains a naughty word, add the user to the ban list and send a DM
     if (containsNaughtyWord) {
-    // Send a DM to the user or take any other action you see fit
-    try {
-      await message.author.send('Please refrain from using inappropriate language.');
-    } catch (error) {
-      console.error(`Could not send DM to ${message.author.tag}.`);
+        //add user to ban list    
+        banList.push(message.author.id);
+        // Send a DM to the user 
+        try {
+        await message.author.send('Please refrain from using naughty words.');
+        } catch (error) {
+        console.error(`Could not send DM to ${message.author.tag}.`);
+        }
     }
-  }
+
+    // Check if the user is in the ban list
+    if (containsNaughtyWord && banList.includes(message.author.id)) {
+        let banUser = message.author.id;
+        // Delete the message
+        try {
+        await message.delete();
+        } catch (error) {
+        console.error(`Could not delete message from ${message.author.tag}.`);
+        }
+
+        // Kick the user from the server
+        try {
+        await message.guild.members.ban(banUser, { reason: 'Violating the ban list rules.' });
+        console.log(`${banUser.tag} has been banned from the server.`);
+        } catch (banError) {
+        console.error(`There was an error trying to ban ${banUser.tag}:`, banError);
+        }
+    }
 });
