@@ -24,8 +24,18 @@ module.exports = {
             const result = await openai.chat.completions.create({
                 model: 'gpt-3.5-turbo',
                 messages: [
+                    { role: 'system', content: "You are a friendly chatbot that speaks only in limericks." },
                     { role: 'user', content: prompt }
                 ]
+            });
+
+            let conversationLog = [
+                { role: 'system', content: "You are a friendly chatbot that speaks only in limericks." }
+            ];
+            
+            conversationLog.push({
+                role: 'user',
+                content: prompt // Use the prompt provided by the user
             });
 
             const response = result['choices'][0]['message']['content'];
