@@ -4,12 +4,21 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
 const { OpenAI }  = require('openai');
+
+/// List of words to check for in messages
 const naughtyWords = ['duck', 'spit']
+/// List of users who have been warned about using banned words
+const banList = [];
 
 const client = new Client({
-    intents: [GatewayIntentBits.Guilds, 
-			GatewayIntentBits.MessageContent,  
-			GatewayIntentBits.GuildMessages]
+    intents: [
+		// possibly in GPT-4 you don't need GatewayIntentBits and 'Guilds' etc are strings in array
+		GatewayIntentBits.Guilds,
+		GatewayIntentBits.MessageContent,  
+		GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildModeration,
+    ]
 });
 
 client.commands = new Collection();
@@ -59,8 +68,9 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 });
 
-client.on('messageCreate',  async (message) => {
-    console.log('Message received:', message.content)
+client.on('messageCreate', async (message) => {
+    //console.log('Message received:', message.content)
+    //console.log('Message metadata: ', message)
 
 	// Prevent the bot from replying to its own messages
     if (message.author.bot) return;
@@ -101,14 +111,64 @@ client.on('messageCreate',  async (message) => {
     // Check if the message contains any of the naughty words
     const containsNaughtyWord = naughtyWords.some(keyword => messageContentLowerCase.includes(keyword));
 
+    // If the message contains a naughty word, add the user to the ban list and send a DM warning
     if (containsNaughtyWord) {
-    // Send a DM to the user or take any other action you see fit
-    try {
-      await message.author.send('Please refrain from using inappropriate language.');
-    } catch (error) {
-      console.error(`Could not send DM to ${message.author.tag}.`);
+        //add user to ban list    
+        banList.push(message.author.id);
+        // Send a DM to the user 
+        try {
+        await message.author.send('Please refrain from using naughty words.');
+        } catch (error) {
+        console.error(`Could not send DM to ${message.author.tag}.`);
+        }
     }
-  }
-});
 
-client.login(process.env.TOKEN); // Log in the bot client to Discord
+    // Check if the user is in the ban list and still uses a naughty word
+    if (containsNaughtyWord && banList.includes(message.author.id)) {
+        let banUser = message.author.id;
+        // Delete the message
+        try {
+        await message.delete();
+        } catch (error) {
+        console.error(`Why you no delete message from ${message.author.tag}?`, error);
+        }
+
+        // Kick the user from the server
+        try {
+        await message.guild.members.ban(banUser, { reason: 'Violating the ban list rules after being warned.' });
+        console.log(`${banUser.tag} has been banned from the server and cancelled from the universe.`);
+        } catch (banError) {
+        console.error(`Why you no ban ${banUser.tag}?:`, banError);
+        }    
+    }
+
+    //Use openai automoderation to check for inappropriate content
+    const moderation = await openai.moderations.create({ input: message.content });
+
+    if (moderation.results[0].flagged)  {
+        console.log('Inappropriate content detected:', moderation.results);
+        // DM user
+        message.author.send('Please refrain from using inappropriate content.');
+        // Add user to ban list
+        banList.push(message.author.id);
+    } else if (moderation.results[0].flagged && banList.includes(message.author.id)){
+        let banUser = message.author.id;
+        // Delete the message
+        try {
+        await message.delete();
+        } catch (error) {
+        console.error(`Why you no delete message from ${message.author.tag}?`, error);
+        }
+
+        // Kick the user from the server
+        try {
+        await message.guild.members.ban(banUser, { reason: 'Violating the ban list rules after being warned.' });
+        console.log(`${banUser.tag} has been banned from the server and cancelled from the universe.`);
+        } catch (banError) {
+        console.error(`Why you no ban ${banUser.tag}?:`, banError);
+        }
+    }
+     
+
+
+});
