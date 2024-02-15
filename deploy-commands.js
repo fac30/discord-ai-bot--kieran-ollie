@@ -9,9 +9,8 @@ const commands = [];
 // Grab all the command files from the commands directory
 const commandsPath = path.join(__dirname, 'commands');
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
-// Inspect code for references to dm.js
-console.log(commandFiles);
 
+// Loop through command files
 for (const file of commandFiles) {
     const filePath = path.join(commandsPath, file);
     const command = require(filePath);
@@ -25,7 +24,7 @@ for (const file of commandFiles) {
 // Construct and prepare an instance of the REST module
 const rest = new REST().setToken(TOKEN);
 
-// and deploy  commands!
+// and deploy commands!
 (async () => {
     try {
         console.log(`Started refreshing ${commands.length} application (/) commands.`);
