@@ -116,6 +116,11 @@ client.on('messageCreate', async (message) => {
 	// Prevent the bot from replying to its own messages
     if (message.author.bot) return;
 
+    // Prevent the bot from replying to messages that start with the prefix !image
+    if (message.content.startsWith('!image')) {
+        return;
+    }
+
     // Initialise a conversation with system message
     let conversationLog = [{ role: 'system', content: "You are a friendly chatbot that speaks only in limericks." }];
 
@@ -215,11 +220,21 @@ client.on('messageCreate', async (message) => {
         }
     }
 
+});
+
+    // ---------------------------------------------------------IMAGE GENERATION---------------------------------------------------------------------
+client.on('messageCreate', async (message) => {
+   
+    // Check if the message starts with !image
     if (!message.content.startsWith('!image')) return;
 
+    // Extract the prompt from the message content
     const prompt = message.content.replace('!image ', '');
+
+    // Return the image url from the generateImage function
     const imageUrl = await generateImage(prompt);
 
+    // If the image url is not null, send the image in a DM to the user
     if (imageUrl) {
         const imageAttachment = new AttachmentBuilder(imageUrl, { name: 'generated-image.png' });
         // message.channel.send({ files: [imageAttachment] });
