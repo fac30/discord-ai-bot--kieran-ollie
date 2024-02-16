@@ -12,7 +12,6 @@ const banList = [];
 
 const client = new Client({
     intents: [
-		// possibly in GPT-4 you don't need GatewayIntentBits and 'Guilds' etc are strings in array
 		GatewayIntentBits.Guilds,
 		GatewayIntentBits.MessageContent,  
 		GatewayIntentBits.GuildMessages,
@@ -21,44 +20,52 @@ const client = new Client({
     ]
 });
 
-client.commands = new Collection();
-const foldersPath = path.join(__dirname, 'commands');
-const commandFolders = fs.readdirSync(foldersPath);
-
-for (const folder of commandFolders) {
-    const commandsPath = path.join(foldersPath, folder);
-    const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
-    for (const file of commandFiles) {
-        const filePath = path.join(commandsPath, file);
-        const command = require(filePath);
-        if ('data' in command && 'execute' in command) {
-            client.commands.set(command.data.name, command);
-        } else {
-            console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
-        }
-    }
-}
-
+// Log something once bot is online
 client.once(Events.ClientReady, readyClient => {
     console.log(`Ready! Logged in as ${readyClient.user.tag}`);
 });
 
+// New instance of OpenAI API
 const openai = new OpenAI({
-    apiKey: process.env.OPENAI_KEY,
+    apiKey: process.env.OPENAI_API_KEY,
 });
 
+// ---------------------------------------------------------DEAL WITH SLASH COMMANDS---------------------------------------------------------------------
+client.commands = new Collection(); 
+
+// Define the path to the commands folder
+const commandsPath = path.join(__dirname, 'commands');
+
+// Read all JavaScript files directly from the commands folder
+const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+
+// Loop through each file (for eg slash commands) and require them
+for (const file of commandFiles) {
+    const filePath = path.join(commandsPath, file);
+    const command = require(filePath);
+    if ('data' in command && 'execute' in command) {
+        client.commands.set(command.data.name, command);
+    } else {
+        console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+    }
+}
+
 client.on(Events.InteractionCreate, async interaction => {
+    // Check if the interaction is a command, retrieve command based on name
     if (!interaction.isChatInputCommand()) return;
     const command = interaction.client.commands.get(interaction.commandName);
 
+    // If no command found, log error
     if (!command) {
         console.error(`No command matching ${interaction.commandName} was found.`);
         return;
     }
 
     try {
+        // Execute command
         await command.execute(interaction);
     } catch (error) {
+        // If command fails to execute, log error
         console.error(error);
         if (interaction.replied || interaction.deferred) {
             await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
@@ -68,24 +75,28 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 });
 
+// Listening for events in channels that the bot is in
 client.on('messageCreate', async (message) => {
-    //console.log('Message received:', message.content)
-    //console.log('Message metadata: ', message)
+    // ---------------------------------------------------------RESPONSE GENERATION--------------------------------------------------------------------
+    console.log('Message received:', message.content)
 
 	// Prevent the bot from replying to its own messages
     if (message.author.bot) return;
-    // if (message.channel.id !== process.env.CHANNEL_ID) return;
 
+    // Initialise a conversation with system message
     let conversationLog = [{ role: 'system', content: "You are a friendly chatbot that speaks only in limericks." }];
 
+    // Add user message to conversation log
     conversationLog.push({
         role: 'user',
         content: message.content
     });
 
+    // Send typing indicator in channel
     await message.channel.sendTyping();
 
     try {
+        // Call API to generate response
         const result = await openai.chat.completions.create({
             model: 'gpt-3.5-turbo',
             messages: conversationLog.map(({ role, content }) => ({ role, content }))
@@ -94,6 +105,7 @@ client.on('messageCreate', async (message) => {
         // Log the result to see if it's populated
         console.log('Result:', result);
 
+        // If a message is generated, send as reply
         if ((result['choices'][0]['message']['content'])) {
             console.log('Generated message:', result['choices'][0]['message']['content']);
             message.reply(result['choices'][0]['message']['content']);
@@ -105,6 +117,7 @@ client.on('messageCreate', async (message) => {
         return;
     }
 
+    // ---------------------------------------------------------MODERATION-----------------------------------------------------------------------------
     // Convert message content to lower case to make the check case-insensitive
     const messageContentLowerCase = message.content.toLowerCase();
 
