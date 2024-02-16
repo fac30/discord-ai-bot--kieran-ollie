@@ -1,13 +1,14 @@
 require('dotenv/config');
+const axios = require('axios');
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
+const { Client, Collection, Events, GatewayIntentBits, AttachmentBuilder } = require('discord.js');
 const { OpenAI }  = require('openai');
 
 /// List of words to check for in messages
 const naughtyWords = ['duck', 'spit']
-/// List of users who have been warned about using banned words
+/// List of users who have been warned about using banned words or flagged content
 const banList = [];
 
 const client = new Client({
@@ -75,6 +76,38 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 });
 
+
+//---------------------------------------------------------GENERATE IMAGE---------------------------------------------------------------------
+async function generateImage(prompt) {
+    try {
+        const response = await axios.post(
+            'https://api.openai.com/v1/images/generations',
+            {
+                prompt: prompt,
+                n: 1,
+                size: "1024x1024",
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                    'Content-Type': 'application/json',
+                },
+            }
+        );
+
+        if (response.data && response.data.data && response.data.data.length > 0) {
+            const imageData = response.data.data[0].url;
+            return imageData;
+        } else {
+            throw new Error('Failed to generate image');
+        }
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+}
+
+
 // Listening for events in channels that the bot is in
 client.on('messageCreate', async (message) => {
     // ---------------------------------------------------------RESPONSE GENERATION--------------------------------------------------------------------
@@ -138,7 +171,7 @@ client.on('messageCreate', async (message) => {
 
     // Check if the user is in the ban list and still uses a naughty word
     if (containsNaughtyWord && banList.includes(message.author.id)) {
-        let banUser = message.author.id;
+        let banUser = message.author.tag;
         // Delete the message
         try {
         await message.delete();
@@ -151,7 +184,7 @@ client.on('messageCreate', async (message) => {
         await message.guild.members.ban(banUser, { reason: 'Violating the ban list rules after being warned.' });
         console.log(`${banUser.tag} has been banned from the server and cancelled from the universe.`);
         } catch (banError) {
-        console.error(`Why you no ban ${banUser.tag}?:`, banError);
+        console.error(`Why you no ban ${banUser}?:`, banError);
         }    
     }
 
@@ -165,7 +198,7 @@ client.on('messageCreate', async (message) => {
         // Add user to ban list
         banList.push(message.author.id);
     } else if (moderation.results[0].flagged && banList.includes(message.author.id)){
-        let banUser = message.author.id;
+        let banUser = message.author.tag;
         // Delete the message
         try {
         await message.delete();
@@ -178,8 +211,21 @@ client.on('messageCreate', async (message) => {
         await message.guild.members.ban(banUser, { reason: 'Violating the ban list rules after being warned.' });
         console.log(`${banUser.tag} has been banned from the server and cancelled from the universe.`);
         } catch (banError) {
-        console.error(`Why you no ban ${banUser.tag}?:`, banError);
+        console.error(`Why you no ban ${banUser}?:`, banError);
         }
+    }
+
+    if (!message.content.startsWith('!image')) return;
+
+    const prompt = message.content.replace('!image ', '');
+    const imageUrl = await generateImage(prompt);
+
+    if (imageUrl) {
+        const imageAttachment = new AttachmentBuilder(imageUrl, { name: 'generated-image.png' });
+        // message.channel.send({ files: [imageAttachment] });
+        message.author.send({ content: `Here's your generated image based on the description: "${prompt}"`, files: [imageAttachment] });
+    } else {
+        message.channel.send('Sorry, I was unable to generate an image.');
     }
      
 });
