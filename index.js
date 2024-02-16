@@ -1,4 +1,5 @@
 require('dotenv/config');
+
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
@@ -21,7 +22,6 @@ const client = new Client({
 });
 
 client.commands = new Collection();
-client.login(process.env.TOKEN);
 const foldersPath = path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(foldersPath);
 
@@ -72,7 +72,7 @@ client.on('messageCreate', async (message) => {
     //console.log('Message received:', message.content)
     //console.log('Message metadata: ', message)
 
-    // Prevent the bot from replying to its own messages
+	// Prevent the bot from replying to its own messages
     if (message.author.bot) return;
     // if (message.channel.id !== process.env.CHANNEL_ID) return;
 
@@ -169,6 +169,6 @@ client.on('messageCreate', async (message) => {
         }
     }
      
-
-
 });
+
+client.login(process.env.TOKEN);
