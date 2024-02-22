@@ -77,9 +77,11 @@ client.on(Events.InteractionCreate, async interaction => {
 });
 
 
-//---------------------------------------------------------GENERATE IMAGE---------------------------------------------------------------------
+//---------------------------------------------------------GENERATE IMAGE FUNCTION---------------------------------------------------------------------
 async function generateImage(prompt) {
     try {
+        console.log('Generating image with prompt:', prompt);
+
         const response = await axios.post(
             'https://api.openai.com/v1/images/generations',
             {
@@ -94,6 +96,7 @@ async function generateImage(prompt) {
                 },
             }
         );
+        console.log('Response received:', response.data);
 
         if (response.data && response.data.data && response.data.data.length > 0) {
             const imageData = response.data.data[0].url;
@@ -102,147 +105,141 @@ async function generateImage(prompt) {
             throw new Error('Failed to generate image');
         }
     } catch (error) {
+        console.error('Error generating image:', error);
         console.error(error);
         return null;
     }
 }
 
-
+// ---------------------------------------------------------RESPONSE GENERATION--------------------------------------------------------------------
 // Listening for events in channels that the bot is in
-client.on('messageCreate', async (message) => {
-    // ---------------------------------------------------------RESPONSE GENERATION--------------------------------------------------------------------
-    console.log('Message received:', message.content)
-
-	// Prevent the bot from replying to its own messages
+async function handleMessage(message) {
+    // Prevent the bot from replying to its own messages
     if (message.author.bot) return;
 
     // Prevent the bot from replying to messages that start with the prefix !image
     if (message.content.startsWith('!image')) {
-        return;
-    }
+        // Extract the prompt from the message content
+        const prompt = message.content.replace('!image ', '');
 
-    // Initialise a conversation with system message
-    let conversationLog = [{ role: 'system', content: "You are a friendly chatbot that speaks only in limericks." }];
+        // Return the image url from the generateImage function
+        const imageUrl = await generateImage(prompt);
 
-    // Add user message to conversation log
-    conversationLog.push({
-        role: 'user',
-        content: message.content
-    });
+        // If the image url is not null, send the image in a DM to the user
+        if (imageUrl) {
+            const imageAttachment = new AttachmentBuilder(imageUrl, { name: 'generated-image.png' });
+            // message.channel.send({ files: [imageAttachment] });
+            message.author.send({ content: `Here's your generated image based on the description: "${prompt}"`,
+            files: [imageAttachment]});
+        } else {
+            message.channel.send('Sorry, I was unable to generate an image.');
+        }
+    } else {
+        // Initialise a conversation with system message
+        let conversationLog = [{ role: 'system', content: "You are a friendly chatbot that speaks only in limericks." }];
 
-    // Send typing indicator in channel
-    await message.channel.sendTyping();
-
-    try {
-        // Call API to generate response
-        const result = await openai.chat.completions.create({
-            model: 'gpt-3.5-turbo',
-            messages: conversationLog.map(({ role, content }) => ({ role, content }))
+        // Add user message to conversation log
+        conversationLog.push({
+            role: 'user',
+            content: message.content
         });
 
-        // Log the result to see if it's populated
-        console.log('Result:', result);
+        // Send typing indicator in channel
+        await message.channel.sendTyping();
 
-        // If a message is generated, send as reply
-        if ((result['choices'][0]['message']['content'])) {
-            console.log('Generated message:', result['choices'][0]['message']['content']);
-            message.reply(result['choices'][0]['message']['content']);
-        } else {
-            console.log('No message generated.');
-        }
-    } catch (error) {
-        console.error('Error while calling OpenAI:', error);
-        return;
-    }
-
-    // ---------------------------------------------------------MODERATION-----------------------------------------------------------------------------
-    // Convert message content to lower case to make the check case-insensitive
-    const messageContentLowerCase = message.content.toLowerCase();
-
-    // Check if the message contains any of the naughty words
-    const containsNaughtyWord = naughtyWords.some(keyword => messageContentLowerCase.includes(keyword));
-
-    // If the message contains a naughty word, add the user to the ban list and send a DM warning
-    if (containsNaughtyWord) {
-        //add user to ban list    
-        banList.push(message.author.id);
-        // Send a DM to the user 
         try {
-        await message.author.send('Please refrain from using naughty words.');
+            // Call API to generate response
+            const result = await openai.chat.completions.create({
+                model: 'gpt-3.5-turbo',
+                messages: conversationLog.map(({ role, content }) => ({ role, content }))
+            });
+
+            // Log the result to see if it's populated
+            console.log('Result:', result);
+
+            // If a message is generated, send as reply
+            if ((result['choices'][0]['message']['content'])) {
+                console.log('Generated message:', result['choices'][0]['message']['content']);
+                message.reply(result['choices'][0]['message']['content']);
+            } else {
+                console.log('No message generated.');
+            }
         } catch (error) {
-        console.error(`Could not send DM to ${message.author.tag}.`);
-        }
-    }
-
-    // Check if the user is in the ban list and still uses a naughty word
-    if (containsNaughtyWord && banList.includes(message.author.id)) {
-        let banUser = message.author.tag;
-        // Delete the message
-        try {
-        await message.delete();
-        } catch (error) {
-        console.error(`Why you no delete message from ${message.author.tag}?`, error);
+            console.error('Error while calling OpenAI:', error);
+            return;
         }
 
-        // Kick the user from the server
-        try {
-        await message.guild.members.ban(banUser, { reason: 'Violating the ban list rules after being warned.' });
-        console.log(`${banUser.tag} has been banned from the server and cancelled from the universe.`);
-        } catch (banError) {
-        console.error(`Why you no ban ${banUser}?:`, banError);
-        }    
-    }
+        // ---------------------------------------------------------MODERATION-----------------------------------------------------------------------------
+        // Convert message content to lower case to make the check case-insensitive
+        const messageContentLowerCase = message.content.toLowerCase();
 
-    //Use openai automoderation to check for inappropriate content
-    const moderation = await openai.moderations.create({ input: message.content });
+        // Check if the message contains any of the naughty words
+        const containsNaughtyWord = naughtyWords.some(keyword => messageContentLowerCase.includes(keyword));
 
-    if (moderation.results[0].flagged)  {
-        console.log('Inappropriate content detected:', moderation.results);
-        // DM user
-        message.author.send('Please refrain from using inappropriate content.');
-        // Add user to ban list
-        banList.push(message.author.id);
-    } else if (moderation.results[0].flagged && banList.includes(message.author.id)){
-        let banUser = message.author.tag;
-        // Delete the message
-        try {
-        await message.delete();
-        } catch (error) {
-        console.error(`Why you no delete message from ${message.author.tag}?`, error);
+        // If the message contains a naughty word, add the user to the ban list and send a DM warning
+        if (containsNaughtyWord) {
+            //add user to ban list    
+            banList.push(message.author.id);
+            // Send a DM to the user 
+            try {
+            await message.author.send('Please refrain from using naughty words.');
+            } catch (error) {
+            console.error(`Could not send DM to ${message.author.tag}.`);
+            }
         }
 
-        // Kick the user from the server
-        try {
-        await message.guild.members.ban(banUser, { reason: 'Violating the ban list rules after being warned.' });
-        console.log(`${banUser.tag} has been banned from the server and cancelled from the universe.`);
-        } catch (banError) {
-        console.error(`Why you no ban ${banUser}?:`, banError);
+        // Check if the user is in the ban list and still uses a naughty word
+        if (containsNaughtyWord && banList.includes(message.author.id)) {
+            let banUser = message.author.tag;
+            // Delete the message
+            try {
+            await message.delete();
+            } catch (error) {
+            console.error(`Why you no delete message from ${message.author.tag}?`, error);
+            }
+
+            // Kick the user from the server
+            try {
+            await message.guild.members.ban(banUser, { reason: 'Violating the ban list rules after being warned.' });
+            console.log(`${banUser.tag} has been banned from the server and cancelled from the universe.`);
+            } catch (banError) {
+            console.error(`Why you no ban ${banUser}?:`, banError);
+            }    
+        }
+
+        //Use openai automoderation to check for inappropriate content
+        const moderation = await openai.moderations.create({ input: message.content });
+
+        if (moderation.results[0].flagged)  {
+            console.log('Inappropriate content detected:', moderation.results);
+            // DM user
+            message.author.send('Please refrain from using inappropriate content.');
+            // Add user to ban list
+            banList.push(message.author.id);
+        } else if (moderation.results[0].flagged && banList.includes(message.author.id)){
+            let banUser = message.author.tag;
+            // Delete the message
+            try {
+            await message.delete();
+            } catch (error) {
+            console.error(`Why you no delete message from ${message.author.tag}?`, error);
+            }
+
+            // Kick the user from the server
+            try {
+            await message.guild.members.ban(banUser, { reason: 'Violating the ban list rules after being warned.' });
+            console.log(`${banUser.tag} has been banned from the server and cancelled from the universe.`);
+            } catch (banError) {
+            console.error(`Why you no ban ${banUser}?:`, banError);
+            }
         }
     }
+};
 
-});
-
-    // ---------------------------------------------------------IMAGE GENERATION---------------------------------------------------------------------
-client.on('messageCreate', async (message) => {
-   
-    // Check if the message starts with !image
-    if (!message.content.startsWith('!image')) return;
-
-    // Extract the prompt from the message content
-    const prompt = message.content.replace('!image ', '');
-
-    // Return the image url from the generateImage function
-    const imageUrl = await generateImage(prompt);
-
-    // If the image url is not null, send the image in a DM to the user
-    if (imageUrl) {
-        const imageAttachment = new AttachmentBuilder(imageUrl, { name: 'generated-image.png' });
-        // message.channel.send({ files: [imageAttachment] });
-        message.author.send({ content: `Here's your generated image based on the description: "${prompt}"`, files: [imageAttachment] });
-    } else {
-        message.channel.send('Sorry, I was unable to generate an image.');
-    }
-     
-});
+client.on('messageCreate', handleMessage);   
 
 client.login(process.env.TOKEN);
+
+module.exports = {
+    handleMessage: handleMessage,
+}
