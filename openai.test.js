@@ -1,5 +1,7 @@
 // Import necessary modules and files
-const { handleMessage } = require('./index.js'); // Assuming your handleMessage function is exported from index.js
+const { handleMessage, client } = require('./index.js'); // Assuming your handleMessage function is exported from index.js
+
+const { GatewayIntentBits, Events } = require('discord.js');
 
 // --------------------------------------------- TEST HELPERS-------------------------------------------
 
@@ -50,3 +52,24 @@ test("OpenAI responding", () => {
 
 // check that my bot securely loads API keys from the .env file, confirming that no sensitive information is hard-coded
 // test("")
+
+
+//--------------------------------------------- Client test-------------------------------------------
+
+test("Discord Client Creation and Configuration", () => {
+    // Assuming client is imported from index.js, we skip directly to validations
+
+    // Check if the client is created
+    if (!client) {
+        console.error("Fail: Discord client is not created.");
+        return;
+    }
+    console.info("Pass: Discord client is successfully created.");
+
+    // Check for ClientReady event setup
+    if (typeof client.listeners(Events.ClientReady)[0] !== 'function') {
+        console.error("Fail: ClientReady event listener is not set up correctly.");
+        return;
+    }
+    console.info("Pass: ClientReady event listener is set up correctly.");
+});
