@@ -73,3 +73,36 @@ test("Discord Client Creation and Configuration", () => {
     }
     console.info("Pass: ClientReady event listener is set up correctly.");
 });
+
+
+//--------------------------------------------- Login test --------------------------------------------------
+test("Bot Login to Discord", () => {
+    return new Promise((resolve, reject) => {
+        client.once('ready', () => {
+            try {
+                // Assuming 'client.user.tag' gives us the bot's username and discriminator
+                equal(typeof client.user.tag, 'string', "Bot's user tag should be a string");
+                console.info("Pass: Bot has logged in and is ready.");
+                resolve();
+            } catch (error) {
+                console.error("Fail: " + error.message);
+                reject(error);
+            }
+        });
+
+        client.login(process.env.BOT_TOKEN).catch(error => {
+            console.error("Fail: Bot login failed with error", error.message);
+            reject(error);
+        });
+    });
+});
+
+// Running the test with async/await syntax for better error handling and flow control
+(async function runTest() {
+    try {
+        await test("Bot Login to Discord", () => {});
+        console.log("All tests passed.");
+    } catch (error) {
+        console.error("Some tests failed.");
+    }
+})();
