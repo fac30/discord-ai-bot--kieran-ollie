@@ -1,5 +1,6 @@
 // Import necessary modules and files
 const { handleMessage } = require('./index.js'); // Assuming your handleMessage function is exported from index.js
+const fs = require('fs'); // Require file system for .env testing
 
 // --------------------------------------------- TEST HELPERS-------------------------------------------
 
@@ -49,4 +50,12 @@ test("OpenAI responding", () => {
 })
 
 // check that my bot securely loads API keys from the .env file, confirming that no sensitive information is hard-coded
-// test("")
+test(".env exists", () => {
+    const envFilePath = '.env';
+    if (fs.existsSync(envFilePath)) {
+        console.info("Pass: .env file exists.");
+    } else {
+        console.error("Fail: .env file does not exist.");
+    }
+})
+
