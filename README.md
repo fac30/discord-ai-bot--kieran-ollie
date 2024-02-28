@@ -3,7 +3,9 @@
 
 ### Install dependencies
 Create a folder for the program and navigate to it:
+
 `npm init -y`
+
 `npm install discord.js openai dotenv axios`
 
 
