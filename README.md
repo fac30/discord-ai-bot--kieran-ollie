@@ -1,5 +1,13 @@
 # discord-ai-bot--kieran-ollie
 ## Project setup
+
+### Install dependencies
+Create a folder for the program and navigate to it:
+`npm init -y`
+`npm install discord.js openai dotenv axios`
+
+
+
 ## Installing the Discord bot
 ## Setting up the `.env` file
 ### What is a `.env` file?
