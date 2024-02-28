@@ -241,5 +241,6 @@ client.on('messageCreate', handleMessage);
 client.login(process.env.TOKEN);
 
 module.exports = {
+    client: client,
     handleMessage: handleMessage,
 }
