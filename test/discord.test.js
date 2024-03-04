@@ -1,3 +1,6 @@
+// require assert module
+const assert = require('assert');
+
 // import client and handleMessage from index.js
 const { handleMessage, client } = require('../index.js'); 
 
@@ -24,28 +27,26 @@ function test(name, fn) {
 
 test("Discord Client Creation and Configuration", async () => {
     try {
-        // Check if the client is created
-        if (!client) {
-            throw new Error("Discord client is not created.");
-        }
+        // Assert that the client is created 
+        assert.ok(client, "Discord client is not created.");
         console.info("Pass: Discord client is successfully created.");
 
-        // Check for ClientReady event setup
-        if (typeof client.listeners('ready')[0] !== 'function') {
-            throw new Error("ClientReady event listener is not set up correctly.");
-        }
+        // Assert that the first 'ready' event listener is a function
+        assert.strictEqual(typeof client.listeners('ready')[0], 'function', "ClientReady event listener is not set up correctly.");
         console.info("Pass: ClientReady event listener is set up correctly.");
     } catch (error) {
         console.error(`Fail: ${error.message}`);
     }
 });
 
+
 //--------------------------------------------- Login test --------------------------------------------------
 test("Bot Login to Discord", () => {
     return new Promise((resolve, reject) => {
         client.once('ready', () => {
             try {
-                equal(typeof client.user.tag, 'string', "Bot's user tag should be a string");
+                // Use assert.strictEqual to compare the type of client.user.tag to 'string'
+                assert.strictEqual(typeof client.user.tag, 'string', "Bot's user tag should be a string");
                 console.info("Pass: Bot has logged in and is ready.");
                 resolve();
             } catch (error) {
@@ -65,17 +66,23 @@ test("Bot Login to Discord", () => {
 
 test("Bot DMs the user", () => {
     return new Promise((resolve, reject) => {
-        const testMsg = 'DM from bot'; 
+        const testMsg = 'DM from bot';
+
         client.once('messageCreate', msg => {
             try {
-                equal(msg.content, testMsg, "Bot should send a DM to the user");
-                console.info("Pass: Bot has sent a DM to the user.");
-                resolve();
+                if (msg.channel.type === 'DM') {
+                    assert.strictEqual(msg.content, testMsg, "Bot should send a DM to the user");
+                    console.info("Pass: Bot has sent a DM to the user.");
+                    resolve();
+                } else {
+                    // Ignore messages not in DMs
+                }
             } catch (error) {
                 console.error("Fail: " + error.message);
                 reject(error);
             }
         });
+
     });
 });
 
