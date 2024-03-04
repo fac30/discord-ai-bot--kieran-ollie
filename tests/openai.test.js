@@ -38,38 +38,34 @@ test(".env exists", () => {
     }
 });
 
-// // check that the .env file is in the gitignore
-// test(".env inclusion in gitignore", () => {
-//     const gitignoreFilePath = '.gitignore';
-//     const gitignoreContent = fs.readFileSync(gitignoreFilePath, 'utf8');
-//     if (gitignoreContent.includes('.env')) {
-//         console.info("Pass: .env file is included in .gitignore.");
-//     } else {
-//         console.error("Fail: .env file is not included in .gitignore.");
-//     }
-// })
+// check that the .env file is in the gitignore
+test(".env inclusion in gitignore", () => {
+    const gitignoreFilePath = '.gitignore';
+    const gitignoreContent = fs.readFileSync(gitignoreFilePath, 'utf8');
+    assert(gitignoreContent.includes('.env'), "Fail: .env file is not included in .gitignore.")
+})
 
-// // check that relevant variables are imported from .env
-// test("Import variables from .env", () => {
+// check that relevant variables are imported from .env
+test("Import variables from .env", () => {
+    try {
+        // Define the expected environment variables
+        const expectedEnvVariables = {
+            TOKEN: process.env.TOKEN,
+            CHANNEL_ID: process.env.CHANNEL_ID,
+            OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+            CLIENT_ID: process.env.CLIENT_ID
+        };
 
-//     // Define the expected environment variables
-//     const expectedEnvVariables = {
-//         TOKEN: process.env.TOKEN,
-//         CHANNEL_ID: process.env.CHANNEL_ID,
-//         OPENAI_API_KEY: process.env.OPENAI_API_KEY,
-//         CLIENT_ID: process.env.CLIENT_ID
-//     };
+        // Check if variables are defined and have expected values in index.js
+        for (const [key, value] of Object.entries(expectedEnvVariables)) {
+            assert.ok(value, `Fail: ${key} is not correctly imported in index.js.`);
+        }
 
-//     // Check if variables are defined and have expected values in index.js
-//     let pass = true;
-//     for (const [key, value] of Object.entries(expectedEnvVariables)) {
-//         if (!value) {
-//             console.error(`Fail: ${key} is not correctly imported in index.js.`);
-//             pass = false;
-//         }
-//     }
-
-//     if (pass) {
-//         console.info("Pass: Environment variables are correctly imported in index.js.");
-//     }
-// });
+        setTimeout(() => {
+            console.log("Pass: Environment variables are correctly imported in index.js.");
+        }, 0); // Delaying the logging to ensure the message logs after the test result
+    } catch (error) {
+        console.error(error.message); // Log any assertion errors
+        throw error; // Throw the error explicitly to ensure the test fails
+    }
+});
