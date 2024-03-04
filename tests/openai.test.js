@@ -27,14 +27,16 @@ test("OpenAI responding", () => {
 });
 
 // check that my bot securely loads API keys from the .env file, confirming that no sensitive information is hard-coded
-// test(".env existence", () => {
-//     const envFilePath = '.env';
-//     if (fs.existsSync(envFilePath)) {
-//         console.info("Pass: .env file exists.");
-//     } else {
-//         console.error("Fail: .env file does not exist.");
-//     }
-// })
+test(".env exists", () => {
+    const envFilePath = '.env';
+
+    try {
+        fs.accessSync(envFilePath, fs.constants.F_OK);
+        console.info("Pass: .env file exists.");
+    } catch (error) {
+        console.error("Fail: .env file does not exist.");
+    }
+});
 
 // // check that the .env file is in the gitignore
 // test(".env inclusion in gitignore", () => {
