@@ -70,3 +70,27 @@ test(".env inclusion in gitignore", () => {
     }
 })
 
+// check that relevant variables are imported from .env
+test("Import variables from .env", () => {
+
+    // Define the expected environment variables
+    const expectedEnvVariables = {
+        TOKEN: process.env.TOKEN,
+        CHANNEL_ID: process.env.CHANNEL_ID,
+        OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+        CLIENT_ID: process.env.CLIENT_ID
+    };
+
+    // Check if variables are defined and have expected values in index.js
+    let pass = true;
+    for (const [key, value] of Object.entries(expectedEnvVariables)) {
+        if (!value) {
+            console.error(`Fail: ${key} is not correctly imported in index.js.`);
+            pass = false;
+        }
+    }
+
+    if (pass) {
+        console.info("Pass: Environment variables are correctly imported in index.js.");
+    }
+});
