@@ -1,6 +1,9 @@
 // require assert module
 const assert = require('assert');
 
+//import test library
+const { test } = require('node:test');
+
 // import client and handleMessage from index.js
 const { handleMessage, client } = require('../index.js'); 
 
@@ -10,18 +13,6 @@ const { GatewayIntentBits, Events } = require('discord.js');
 // Assuming equal is from an assertion library you're using
 const { equal } = require('assert'); // Ensure to import or define this function based on your actual testing framework
 
-
-//Test function
-
-function test(name, fn) {
-    console.log(`Running test: ${name}`);
-    try {
-        fn();
-        console.log(`${name} passed`);
-    } catch (error) {
-        console.error(`${name} failed with error: ${error}`);
-    }
-}
 
 //--------------------------------------------- Client test-------------------------------------------
 
