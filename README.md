@@ -21,21 +21,21 @@ You require node.js and npm to run this chatbot.  You can check if they are inst
 
 If you do not have node.js and npm installed, follow instructions to install them depending on whether you are running the software in a Mac, Windows or Linux environment.
 
-### Install dependencies
-Create a folder for the program and navigate to it:
-
-`npm init -y`
-
-`npm install discord.js openai dotenv axios`
-
 ## Installing the Discord bot
 Clone the repository into your directory:
 
 `git clone git@github.com:fac30/discord-ai-bot--kieran-ollie.git`
 
+### Install dependencies and run the bot
+Create a folder for the program and navigate to it:
+
+`npm init -y`
+
+`npm install`
+
 Now you can run the bot with the command:
 
-`node index.js`
+`npm run dev`
 
 ## Setting up the `.env` file
 ### What is a `.env` file?
