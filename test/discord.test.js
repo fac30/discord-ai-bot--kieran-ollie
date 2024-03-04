@@ -10,10 +10,8 @@ const { handleMessage, client } = require('../index.js');
 // import intents and events from discord.js
 const { GatewayIntentBits, Events } = require('discord.js');
 
-// Assuming equal is from an assertion library you're using
-const { equal } = require('assert'); // Ensure to import or define this function based on your actual testing framework
-
-
+// Import assert module
+const { equal } = require('assert'); 
 //--------------------------------------------- Client test-------------------------------------------
 
 test("Discord Client Creation and Configuration", async () => {
