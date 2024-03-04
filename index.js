@@ -1,13 +1,14 @@
 require('dotenv/config');
-const axios = require('axios');
 
+// Import the moderation function from the moderation.js file
+const moderateMessage = require('./moderation');
+
+const axios = require('axios');
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits, AttachmentBuilder } = require('discord.js');
 const { OpenAI }  = require('openai');
 
-// Import the moderation function from the moderation.js file
-const moderateMessage = require('./moderation');
 
 /// List of words to check for in messages
 const naughtyWords = ['duck', 'spit']
@@ -78,10 +79,7 @@ client.on(Events.InteractionCreate, async interaction => {
         }
     }
 
-    // utilise moderation function
-    await moderateMessage(message, naughtyWords, banList);
 });
-
 
 
 //---------------------------------------------------------GENERATE IMAGE FUNCTION---------------------------------------------------------------------
@@ -121,10 +119,14 @@ async function generateImage(prompt) {
 // ---------------------------------------------------------RESPONSE GENERATION--------------------------------------------------------------------
 // Listening for events in channels that the bot is in
 async function handleMessage(message) {
-    // Prevent the bot from replying to its own messages
-    if (message.author.bot) return;
+    // Prevent the bot from replying to its own messages or messages without actual content
+    if (message.author.bot || !message.content) return;
 
-    // Prevent the bot from replying to messages that start with the prefix !image
+    console.log("!!!!!!!!!!!!!!!!!Message object:", message);
+    // Call the moderation function early to check the message
+    await moderateMessage(openai, message, naughtyWords, banList);
+
+    // Your existing code for handling '!image' commands and conversation logic follows
     if (message.content.startsWith('!image')) {
         // Extract the prompt from the message content
         const prompt = message.content.replace('!image ', '');
