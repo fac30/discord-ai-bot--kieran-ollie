@@ -168,70 +168,49 @@ async function handleMessage(message) {
             console.error('Error while calling OpenAI:', error);
             return;
         }
+    }
 
-        // ---------------------------------------------------------MODERATION-----------------------------------------------------------------------------
-        // Convert message content to lower case to make the check case-insensitive
-        const messageContentLowerCase = message.content.toLowerCase();
+// ---------------------------------------------------------MODERATION-----------------------------------------------------------------------------
+       
 
-        // Check if the message contains any of the naughty words
-        const containsNaughtyWord = naughtyWords.some(keyword => messageContentLowerCase.includes(keyword));
+    // Convert message content to lower case to make the check case-insensitive
+    const messageContentLowerCase = message.content.toLowerCase();
 
-        // If the message contains a naughty word, add the user to the ban list and send a DM warning
-        if (containsNaughtyWord) {
-            //add user to ban list    
+    // Check if the message contains any of the naughty words
+    const containsNaughtyWord = naughtyWords.some(keyword => messageContentLowerCase.includes(keyword));
+
+    // Use OpenAI automoderation to check for inappropriate content
+    const moderation = await openai.moderations.create({ input: message.content });
+    const flaggedByOpenAI = moderation.results[0].flagged;
+
+    // If the message contains a naughty word or is flagged by OpenAI, add the user to the ban list and send a DM warning
+    if (containsNaughtyWord || flaggedByOpenAI) {
+        // Add user to ban list if not already added
+        if (!banList.includes(message.author.id)) {
             banList.push(message.author.id);
-            // Send a DM to the user 
             try {
-            await message.author.send('Please refrain from using naughty words.');
+                await message.author.send('Please refrain from using naughty or inappropriate words.');
             } catch (error) {
-            console.error(`Could not send DM to ${message.author.tag}.`);
+                console.error(`Could not send DM to ${message.author.tag}.`, error);
             }
         }
 
-        // Check if the user is in the ban list and still uses a naughty word
-        if (containsNaughtyWord && banList.includes(message.author.id)) {
-            let banUser = message.author.tag;
+        // If the user is in the ban list and still uses a naughty word or flagged content
+        if (banList.includes(message.author.id)) {
             // Delete the message
             try {
-            await message.delete();
+                await message.delete();
             } catch (error) {
-            console.error(`Why you no delete message from ${message.author.tag}?`, error);
+                console.error(`Could not delete message from ${message.author.tag}.`, error);
             }
 
-            // Kick the user from the server
+            // Ban the user from the server
             try {
-            await message.guild.members.ban(banUser, { reason: 'Violating the ban list rules after being warned.' });
-            console.log(`${banUser.tag} has been banned from the server and cancelled from the universe.`);
+                await message.guild.members.ban(message.author.id, { reason: 'Violating the ban list rules after being warned.' });
+                console.log(`${message.author.tag} has been banned from the server.`);
             } catch (banError) {
-            console.error(`Why you no ban ${banUser}?:`, banError);
+                console.error(`Could not ban ${message.author.tag}:`, banError);
             }    
-        }
-
-        //Use openai automoderation to check for inappropriate content
-        const moderation = await openai.moderations.create({ input: message.content });
-
-        if (moderation.results[0].flagged)  {
-            console.log('Inappropriate content detected:', moderation.results);
-            // DM user
-            message.author.send('Please refrain from using inappropriate content.');
-            // Add user to ban list
-            banList.push(message.author.id);
-        } else if (moderation.results[0].flagged && banList.includes(message.author.id)){
-            let banUser = message.author.tag;
-            // Delete the message
-            try {
-            await message.delete();
-            } catch (error) {
-            console.error(`Why you no delete message from ${message.author.tag}?`, error);
-            }
-
-            // Kick the user from the server
-            try {
-            await message.guild.members.ban(banUser, { reason: 'Violating the ban list rules after being warned.' });
-            console.log(`${banUser.tag} has been banned from the server and cancelled from the universe.`);
-            } catch (banError) {
-            console.error(`Why you no ban ${banUser}?:`, banError);
-            }
         }
     }
 };
@@ -241,5 +220,6 @@ client.on('messageCreate', handleMessage);
 client.login(process.env.TOKEN);
 
 module.exports = {
+    client: client,
     handleMessage: handleMessage,
-}
+};
