@@ -6,7 +6,6 @@ const moderateMessage = require('./moderation');
 // Import the generateImage function from the imageGenerator.js file
 const generateImage = require('./imageGenerator');
 
-const axios = require('axios');
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits, AttachmentBuilder } = require('discord.js');

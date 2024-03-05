@@ -1,7 +1,6 @@
 // Import necessary modules and files
 const { handleMessage, generateImage } = require('../index.js'); // handleMessage function is exported from index.js
 const { test } = require('node:test');
-const assert = require('assert');
 
 // ensure that the OpenAI library is correctly integrated by creating a test function that attempts to use the OpenAI API to create a simple chat completion or query
 test("OpenAI responding", () => {

@@ -1,6 +1,9 @@
 // require assert module
 const assert = require('assert');
 
+//import dotenv
+require('dotenv').config();
+
 //import test library
 const { test } = require('node:test');
 
@@ -10,8 +13,6 @@ const { handleMessage, client } = require('../index.js');
 // import intents and events from discord.js
 const { GatewayIntentBits, Events } = require('discord.js');
 
-// Import assert module
-const { equal } = require('assert'); 
 //--------------------------------------------- Client test-------------------------------------------
 
 test("Discord Client Creation and Configuration", async () => {
