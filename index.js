@@ -114,8 +114,12 @@ async function generateImage(prompt) {
 // ---------------------------------------------------------RESPONSE GENERATION--------------------------------------------------------------------
 // Listening for events in channels that the bot is in
 async function handleMessage(message) {
+    console.log(`Message author bot status: ${message.author.bot}, Author details:`, message.author);
     // Prevent the bot from replying to its own messages
-    if (message.author.bot) return;
+    if (message.author.bot) {
+        // console.log("Exiting handleMessage: message is from a bot");
+        return;
+    }
 
     // Prevent the bot from replying to messages that start with the prefix !image
     if (message.content.startsWith('!image')) {

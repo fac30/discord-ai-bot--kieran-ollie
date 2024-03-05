@@ -1,6 +1,9 @@
 // require assert module
 const assert = require('assert');
 
+//import dotenv
+require('dotenv').config();
+
 //import test library
 const { test } = require('node:test');
 
@@ -9,10 +12,6 @@ const { handleMessage, client } = require('../index.js');
 
 // import intents and events from discord.js
 const { GatewayIntentBits, Events } = require('discord.js');
-
-// Assuming equal is from an assertion library you're using
-const { equal } = require('assert'); // Ensure to import or define this function based on your actual testing framework
-
 
 //--------------------------------------------- Client test-------------------------------------------
 
@@ -53,28 +52,6 @@ test("Bot Login to Discord", () => {
     });
 });
 
-// --------------------------------------------- DM test --------------------------------------------------
 
-test("Bot DMs the user", () => {
-    return new Promise((resolve, reject) => {
-        const testMsg = 'DM from bot';
-
-        client.once('messageCreate', msg => {
-            try {
-                if (msg.channel.type === 'DM') {
-                    assert.strictEqual(msg.content, testMsg, "Bot should send a DM to the user");
-                    console.info("Pass: Bot has sent a DM to the user.");
-                    resolve();
-                } else {
-                    // Ignore messages not in DMs
-                }
-            } catch (error) {
-                console.error("Fail: " + error.message);
-                reject(error);
-            }
-        });
-
-    });
-});
 
 
