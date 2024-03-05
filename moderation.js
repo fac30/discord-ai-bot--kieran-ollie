@@ -35,3 +35,4 @@ async function moderateMessage(openai, message, naughtyWords, banList) {
 
 // Export the moderation function
 module.exports = moderateMessage;
+module.exports = { moderateMessage };

@@ -88,7 +88,7 @@ async function handleMessage(message) {
     // Prevent the bot from replying to its own messages or messages without actual content
     if (message.author.bot || !message.content) return;
 
-    console.log("!!!!!!!!!!!!!!!!!Message object:", message);
+    console.log("Message object:", message);
     // Call the moderation function early to check the message
     await moderateMessage(openai, message, naughtyWords, banList);
 
