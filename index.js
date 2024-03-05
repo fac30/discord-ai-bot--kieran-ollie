@@ -117,7 +117,7 @@ async function handleMessage(message) {
     console.log(`Message author bot status: ${message.author.bot}, Author details:`, message.author);
     // Prevent the bot from replying to its own messages
     if (message.author.bot) {
-        console.log("Exiting handleMessage: message is from a bot");
+        // console.log("Exiting handleMessage: message is from a bot");
         return;
     }
 
