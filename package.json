@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "node index.js",
-    "test": "node --test",
+    "test": "find ./test -name '*test*.js' | xargs -L 1 node",
     "discord_test": "node test/discord.test.js",
     "openai_test": "node test/openai.test.js",
     "env_test": "node test/env.test.js"

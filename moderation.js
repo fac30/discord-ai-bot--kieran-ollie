@@ -1,6 +1,5 @@
 // ---------------------------------------------------------MODERATION-----------------------------------------------------------------------------
        
-
 async function moderateMessage(openai, message, naughtyWords, banList) {
     const messageContentLowerCase = message.content.toLowerCase();
     const containsNaughtyWord = naughtyWords.some(keyword => messageContentLowerCase.includes(keyword));
