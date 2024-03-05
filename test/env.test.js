@@ -1,3 +1,4 @@
+require('dotenv').config(); // Require dotenv for .env file testing
 const fs = require('fs'); // Require file system for .env testing
 const { test } = require('node:test');
 const assert = require('assert');

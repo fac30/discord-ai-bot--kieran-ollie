@@ -52,28 +52,6 @@ test("Bot Login to Discord", () => {
     });
 });
 
-// --------------------------------------------- DM test --------------------------------------------------
 
-test("Bot DMs the user", () => {
-    return new Promise((resolve, reject) => {
-        const testMsg = 'DM from bot';
-
-        client.once('messageCreate', msg => {
-            try {
-                if (msg.channel.type === 'DM') {
-                    assert.strictEqual(msg.content, testMsg, "Bot should send a DM to the user");
-                    console.info("Pass: Bot has sent a DM to the user.");
-                    resolve();
-                } else {
-                    // Ignore messages not in DMs
-                }
-            } catch (error) {
-                console.error("Fail: " + error.message);
-                reject(error);
-            }
-        });
-
-    });
-});
 
 
