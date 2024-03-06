@@ -83,6 +83,8 @@ client.on(Events.InteractionCreate, async interaction => {
 // Listening for events in channels that the bot is in
 async function handleMessage(message) {
     console.log(`Message author bot status: ${message.author.bot}, Author details:`, message.author);
+    console.log(`Message channel: ${message.channel}`);
+
     // Prevent the bot from replying to its own messages
     if (message.author.bot) {
         // console.log("Exiting handleMessage: message is from a bot");
@@ -91,21 +93,25 @@ async function handleMessage(message) {
 
     // Prevent the bot from replying to messages that start with the prefix !image
     if (message.content.startsWith('!image')) {
-        // Extract the prompt from the message content
-        const prompt = message.content.replace('!image ', '');
+        try {
+            // Extract the prompt from the message content
+            const prompt = message.content.replace('!image ', '');
 
-        // Return the image url from the generateImage function
-        const imageUrl = await generateImage(prompt);
+            // Return the image url from the generateImage function
+            const imageUrl = await generateImage(prompt);
 
-        // If the image url is not null, send the image in a DM to the user
-        if (imageUrl) {
-            const imageAttachment = new AttachmentBuilder(imageUrl, { name: 'generated-image.png' });
-            // message.channel.send({ files: [imageAttachment] });
-            message.author.send({ content: `Here's your generated image based on the description: "${prompt}"`,
-            files: [imageAttachment]});
-        } else {
-            message.channel.send('Sorry, I was unable to generate an image.');
+            // If the image url is not null, send the image in a DM to the user
+            if (imageUrl) {
+                const imageAttachment = new AttachmentBuilder(imageUrl, { name: 'generated-image.png' });
+                // message.channel.send({ files: [imageAttachment] });
+                message.author.send({ content: `Here's your generated image based on the description: "${prompt}"`,
+                files: [imageAttachment]});
+            } else {
+                message.channel.send('Sorry, I was unable to generate an image.');
+                throw new Error("Image failed to generate")
+            }
         }
+        catch(error) {console.error(error) }
     } else {
         // Initialise a conversation with system message
         let conversationLog = [{ role: 'system', content: "You are a friendly chatbot that speaks only in limericks." }];
