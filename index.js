@@ -1,12 +1,12 @@
 require('dotenv/config');
-const axios = require('axios');
 
 // Import the generateImage function from the imageGenerator.js file
 const generateImage = require('./imageGenerator');
 
-const fs = require('node:fs');
-const path = require('node:path');
-const { Client, Collection, Events, GatewayIntentBits, AttachmentBuilder } = require('discord.js');
+// Import the setupInteractionHandler function from the interactionHandler.js file
+const setupInteractionHandler = require('./interactionHandler'); 
+
+const { Client, Events, GatewayIntentBits, AttachmentBuilder } = require('discord.js');
 const { OpenAI }  = require('openai');
 
 /// List of words to check for in messages
@@ -34,50 +34,8 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
 
-// ---------------------------------------------------------DEAL WITH SLASH COMMANDS---------------------------------------------------------------------
-client.commands = new Collection(); 
-
-// Define the path to the commands folder
-const commandsPath = path.join(__dirname, 'commands');
-
-// Read all JavaScript files directly from the commands folder
-const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
-
-// Loop through each file (for eg slash commands) and require them
-for (const file of commandFiles) {
-    const filePath = path.join(commandsPath, file);
-    const command = require(filePath);
-    if ('data' in command && 'execute' in command) {
-        client.commands.set(command.data.name, command);
-    } else {
-        console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
-    }
-}
-
-client.on(Events.InteractionCreate, async interaction => {
-    // Check if the interaction is a command, retrieve command based on name
-    if (!interaction.isChatInputCommand()) return;
-    const command = interaction.client.commands.get(interaction.commandName);
-
-    // If no command found, log error
-    if (!command) {
-        console.error(`No command matching ${interaction.commandName} was found.`);
-        return;
-    }
-
-    try {
-        // Execute command
-        await command.execute(interaction);
-    } catch (error) {
-        // If command fails to execute, log error
-        console.error(error);
-        if (interaction.replied || interaction.deferred) {
-            await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
-        } else {
-            await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
-        }
-    }
-});
+// Run slash command handler
+setupInteractionHandler(client);
 
 // ---------------------------------------------------------RESPONSE GENERATION--------------------------------------------------------------------
 // Listening for events in channels that the bot is in
