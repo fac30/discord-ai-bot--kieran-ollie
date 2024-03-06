@@ -60,4 +60,4 @@ The `CLIENT_ID` is the application ID listed in your bot's [Discord Developer's 
 In order for the bot to work within Discord, right click on the server and open server settings.  Under Server Settings, select Roles, then select the bot, then Permissions.  For the full suite of functions, please select:  View Channels, Kick Members, Ban Members and Manage Messages. 
 
 **Hardcoding words to be flagged for moderation**
-In index.js, alter the 
+In index.js, alter the naughtWords array to add any words that you would like to be flagged.
