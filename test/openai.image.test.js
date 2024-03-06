@@ -1,5 +1,5 @@
 // Import necessary modules and files
-const { handleMessage, generateImage } = require('../index.js'); // handleMessage function is exported from index.js
+const { handleMessage, generateImage } = require('../imageGenerator.js'); // handleMessage function is exported from index.js
 const { test } = require('node:test');
 const assert = require('assert');
 
