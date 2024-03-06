@@ -4,7 +4,7 @@
 
 Our chatbot will work in discord and provide lighthearted limericks in response to user messages by leveraging the Openai API.  
 
-In addition the bot will provide moderation functions for the server, warning users via DM for hateful, racist, bigoted or violent behaviour.  In addition, the user can set a hardoded set of banned words which users will also receive a DM to warn against using.  Repeated use of these words, or other flagged content by the moderator service will result in a ban from the server.
+In addition the bot will provide moderation functions for the server, warning users via DM for hateful, racist, bigoted or violent behaviour.  In addition, the user can set a hardcoded set of banned words which users will also receive a DM to warn against using.  Repeated use of these words, or other flagged content by the moderator service will result in a ban from the server.
 
 Users can utilise Dall-E to receive DMs containing images based upon user prompts.  The bot will respond to messages starting with:
 
@@ -55,3 +55,9 @@ Log into OpenAI and visit the [API keys page](https://platform.openai.com/api-ke
 
 **Client ID**
 The `CLIENT_ID` is the application ID listed in your bot's [Discord Developer's Portal](https://discord.com/developers) page. More on that [here](https://discordjs.guide/creating-your-bot/command-deployment.html#command-registration).
+
+**Bot Permissions**
+In order for the bot to work within Discord, right click on the server and open server settings.  Under Server Settings, select Roles, then select the bot, then Permissions.  For the full suite of functions, please select:  View Channels, Kick Members, Ban Members and Manage Messages. 
+
+**Hardcoding words to be flagged for moderation**
+In index.js, alter the 
