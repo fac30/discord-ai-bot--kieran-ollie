@@ -35,4 +35,4 @@ async function generateImage(prompt) {
     }
 }
 
-module.exports = generateImage;
+module.exports =  generateImage;
