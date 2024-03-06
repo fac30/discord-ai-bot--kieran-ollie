@@ -1,6 +1,5 @@
 // Import necessary modules and files
 const { moderateMessage } = require('../moderation.js'); // moderateMessage function is exported from moderation.js
-const { handleMessage } = require('../index.js'); // handleMessage function is exported from index.js
 const { test } = require('node:test');
 const assert = require('assert');
 
